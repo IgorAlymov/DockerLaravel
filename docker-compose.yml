@@ -1,0 +1,52 @@
+version: '3.3'
+
+services: 
+    nginx: 
+        build:
+            context: .
+            dockerfile: docker/Nginx.Dockerfile
+        restart: always
+        ports: 
+            - 8098:80
+        links: 
+            - fpm
+        volumes: 
+            - ./:/var/www/dockerlaraveltwo
+    fpm:
+        build:
+            context: .
+            dockerfile: docker/Fpm.Dockerfile
+        restart: always
+        volumes: 
+            - ./:/var/www/dockerlaraveltwo
+        links: 
+            - db
+        healthcheck:
+            test: curl -sS http://127.0.0.1 || echo 1
+            interval: 5s
+            timeout: 10s
+            retries: 3
+    adminer:
+        image: adminer
+        restart: always
+        ports:
+            - 8080:8080
+    db:
+        image: mysql:5.7
+        restart: always
+        ports: 
+            - 33061:3306
+        environment: 
+            - MYSQL_ROOT_PASSWORD=root
+            - MYSQL_DATABASE=laravel
+        healthcheck:
+            test: curl -sS http://127.0.0.1 || echo 1
+            interval: 5s
+            timeout: 10s
+            retries: 3
+    composer:
+        image: composer:1
+        volumes: 
+            - ./:/var/www/dockerlaraveltwo
+        working_dir: /var/www/dockerlaraveltwo
+        command: composer install
